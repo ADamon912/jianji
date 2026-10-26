@@ -1,0 +1,50 @@
+{
+  "jdk": {
+    "version": "17.0.20.1",
+    "directory": "zulu17.68.203-ca-jdk17.0.20.1-win_x64",
+    "archive": "zulu-jdk.zip",
+    "url": "https://cdn.azul.com/zulu/bin/zulu17.68.203-ca-jdk17.0.20.1-win_x64.zip",
+    "algorithm": "SHA256",
+    "checksum": "552a335d5342c800fd03b45a23bb1136f5aa5562193542ece506d8c44b0c60d9"
+  },
+  "gradle": {
+    "version": "8.11.1",
+    "archive": "gradle-8.11.1-bin.zip",
+    "url": "https://services.gradle.org/distributions/gradle-8.11.1-bin.zip",
+    "mirrorUrl": "https://repo.huaweicloud.com/gradle/gradle-8.11.1-bin.zip",
+    "algorithm": "SHA256",
+    "checksum": "f397b287023acdba1e9f6fc5ea72d22dd63669d59ed4a289a29b1a76eee151c6"
+  },
+  "commandLineTools": {
+    "version": "19.0",
+    "archive": "cmdline-tools.zip",
+    "url": "https://dl.google.com/android/repository/commandlinetools-win-13114758_latest.zip",
+    "algorithm": "SHA1",
+    "checksum": "54a582f3bf73e04253602f2d1c80bd5868aac115"
+  },
+  "sdkPackages": ["platform-tools", "platforms;android-35", "build-tools;35.0.0"],
+  "sdkArchives": [
+    {
+      "archive": "build-tools.zip",
+      "url": "https://dl.google.com/android/repository/build-tools_r35_windows.zip",
+      "algorithm": "SHA1",
+      "checksum": "af059bb67cf7786f45ee0db85e2d24985df1b4b6",
+      "directory": "build-tools/35.0.0"
+    },
+    {
+      "archive": "platform-35.zip",
+      "url": "https://dl.google.com/android/repository/platform-35_r02.zip",
+      "algorithm": "SHA1",
+      "checksum": "0bb560a90a7a2cbd0dd8348224d518b638fe7949",
+      "directory": "platforms/android-35"
+    },
+    {
+      "archive": "platform-tools.zip",
+      "url": "https://dl.google.com/android/repository/platform-tools_r37.0.1-win.zip",
+      "algorithm": "SHA1",
+      "checksum": "e03e78b1d80b396f1c3358e31251cb31740e1110",
+      "directory": "platform-tools"
+    }
+  ]
+}
+

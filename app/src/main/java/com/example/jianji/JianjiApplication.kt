@@ -15,4 +15,5 @@ class AppContainer(application: Application) {
     val expenses = RoomExpenseRepository(database)
     val saveExpense = SaveExpenseUseCase(expenses)
     val settings = SettingsRepository(application)
+    val documents = com.example.jianji.data.AndroidLedgerDocuments(application.contentResolver)
 }

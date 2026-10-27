@@ -42,6 +42,8 @@ interface LedgerDao {
     @Query("SELECT COUNT(*) FROM expenses WHERE categoryId=:id") suspend fun categoryUsage(id: String): Long
     @Query("DELETE FROM categories WHERE id=:id") suspend fun deleteCategory(id: String): Int
     @Query("SELECT * FROM expenses WHERE id=:id") suspend fun expense(id: String): ExpenseEntity?
+    @Query("SELECT COUNT(*) FROM expenses") suspend fun expenseCount(): Long
+    @Query("SELECT * FROM expenses ORDER BY spentOn DESC, createdAt DESC, id") suspend fun allExpenses(): List<ExpenseEntity>
     @Query("SELECT e.*, c.name AS categoryName, c.iconKey, c.colorKey, c.sortOrder, c.isArchived FROM expenses e JOIN categories c ON e.categoryId=c.id WHERE e.id=:id")
     fun observeExpense(id: String): Flow<JoinedExpense?>
     @Insert suspend fun insertExpense(expense: ExpenseEntity)

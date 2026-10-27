@@ -16,7 +16,7 @@ import com.example.jianji.domain.ThemeMode
 import com.example.jianji.BuildConfig
 
 @Composable
-fun SettingsScreen(model: AppViewModel, theme: ThemeMode, onManageCategories: () -> Unit) {
+fun SettingsScreen(model: AppViewModel, theme: ThemeMode, onManageCategories: () -> Unit, onTransfer: () -> Unit) {
     val error by model.settingsError.collectAsStateWithLifecycle()
     Scaffold(topBar = { PageTopBar("设置") }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
@@ -45,7 +45,9 @@ fun SettingsScreen(model: AppViewModel, theme: ThemeMode, onManageCategories: ()
                     Text("本地账本 · 人民币 CNY")
                     Text("消费记录保存在本机，无需登录或联网。")
                     HorizontalDivider()
-                    Text("目前尚不支持备份。卸载应用或清除应用数据会永久删除消费记录。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("可导出 JSON 保存账单副本，或导出 CSV 查看表格；导入 JSON 时先预览，再合并到账本。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Button(onClick = onTransfer, modifier = Modifier.fillMaxWidth()) { Text("账单导入与导出") }
+                    Text("卸载应用或清除应用数据会删除本机账本，请提前导出并保存文件。", style = MaterialTheme.typography.bodySmall)
                 }
             }
             Text("简记 ${BuildConfig.VERSION_NAME} · 认真记录，轻松生活", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

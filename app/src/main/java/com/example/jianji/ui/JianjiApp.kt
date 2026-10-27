@@ -61,7 +61,11 @@ fun JianjiApp() {
                             val model: StatisticsViewModel = viewModel(factory = viewModelFactory { initializer { StatisticsViewModel(container, createSavedStateHandle()) } })
                             StatisticsScreen(model) { range, ids -> nav.navigate("history/${range.start}/${range.endExclusive}/${ids.sorted().joinToString(",")}") }
                         }
-                        composable("settings") { SettingsScreen(appModel, mode) { nav.navigate("categories") } }
+                        composable("settings") { SettingsScreen(appModel, mode, { nav.navigate("categories") }, { nav.navigate("transfer") }) }
+                        composable("transfer") {
+                            val model: TransferViewModel = viewModel(factory = viewModelFactory { initializer { TransferViewModel(container.expenses, container.documents) } })
+                            TransferScreen(model) { nav.popBackStack() }
+                        }
                         composable("categories") {
                             val model: CategoryViewModel = viewModel(factory = viewModelFactory { initializer { CategoryViewModel(container, createSavedStateHandle()) } })
                             CategoryScreen(model) { nav.popBackStack() }

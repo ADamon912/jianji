@@ -34,6 +34,66 @@ class RoomExpenseRepository(private val database: LedgerDatabase, private val cl
     override fun observeCategories() = dao.categories().map { it.map(CategoryEntity::domain) }
     override fun observeExpense(id: String) = dao.observeExpense(id).map { it?.domain() }
 
+    suspend fun exportLedger(): LedgerFile = database.withTransaction {
+        require(dao.expenseCount() <= LedgerTransfer.MAX_RECORDS) { "当前导出最多支持 10,000 笔账单" }
+        val expenses = dao.allExpenses()
+        require(expenses.all { it.currencyCode == "CNY" }) { "账本包含不支持的币种" }
+        LedgerFile(dao.allCategories().sortedWith(compareBy({ it.sortOrder }, { it.id })).map { it.domain() }, expenses.map { it.domain() })
+    }
+
+    suspend fun previewImport(file: LedgerFile): ImportPreview = writeLock.withLock {
+        database.withTransaction { planImport(file) }
+    }
+
+    private suspend fun planImport(file: LedgerFile): ImportPreview {
+        LedgerTransfer.validate(file, LocalDate.now(clock.withZone(ZoneId.systemDefault())).toEpochDay())
+        val meta = requireNotNull(dao.meta())
+        val existingCount = dao.expenseCount()
+        require(existingCount <= LedgerTransfer.MAX_RECORDS) { "当前导入最多支持 10,000 笔账单" }
+        val existingExpenses = dao.allExpenses().associateBy { it.id }
+        val existingCategories = dao.allCategories()
+        val byId = existingCategories.associateBy { it.id }
+        val byName = existingCategories.associateBy { it.normalizedName }
+        val mapped = mutableMapOf<String, String>()
+        val additions = mutableListOf<CategoryEntity>()
+        file.categories.forEach { c ->
+            val existing = byId[c.id] ?: byName[CategoryRules.key(c.name)]
+            mapped[c.id] = existing?.id ?: c.id
+            if (existing == null) additions += CategoryEntity(c.id, c.name, CategoryRules.key(c.name), c.iconKey,
+                c.colorKey, existingCategories.size + additions.size, isBuiltIn = false, isArchived = c.archived)
+        }
+        require(existingCategories.size + additions.size <= 200) { "合并后超过 200 个类型，请先整理类型" }
+        val records = mutableListOf<ExpenseEntity>()
+        var skipped = 0
+        file.expenses.forEachIndexed { index, e ->
+            val category = mapped.getValue(e.categoryId)
+            val existing = existingExpenses[e.id]
+            if (existing != null) {
+                require(existing.amountMinor == e.amountMinor && existing.categoryId == category &&
+                    existing.spentOn == e.spentOn && existing.note == e.note && existing.currencyCode == "CNY") {
+                    "第 ${index + 1} 笔账单与本机同 ID 记录内容不同，未导入任何数据。请核对文件或重新导出"
+                }
+                skipped++
+            } else records += ExpenseEntity(e.id, e.amountMinor, category, e.spentOn, e.note, e.createdAt, e.updatedAt, e.revision)
+        }
+        require(existingCount + records.size <= LedgerTransfer.MAX_RECORDS) { "合并后超过 10,000 笔账单，无法导入" }
+        return ImportPreview(file, meta.dataEpoch, meta.changeSeq, additions, records, skipped, file.categories.size - additions.size,
+            (existingCategories + additions).associate { it.id to it.name })
+    }
+
+    suspend fun commitImport(preview: ImportPreview): Int = writeLock.withLock {
+        database.withTransaction {
+            val meta = requireNotNull(dao.meta())
+            check(meta.dataEpoch == preview.epoch && meta.changeSeq == preview.sequence) { "账本已变化，请重新选择文件并预览" }
+            // Revalidate in the write transaction, including the current device date.
+            val plan = planImport(preview.file)
+            dao.insertCategories(plan.categories)
+            plan.expenses.forEach { dao.insertExpense(it) }
+            if (plan.categories.isNotEmpty() || plan.expenses.isNotEmpty()) dao.setSequence(Math.addExact(meta.changeSeq, 1))
+            plan.added
+        }
+    }
+
     // The same lock and transaction as expense writes prevent deletion/creation races.
     private suspend fun mutateCategory(action: suspend () -> CategoryResult): CategoryResult = try {
         writeLock.withLock { database.withTransaction {
